@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# !test
+
 import argparse
 import json
 import os
