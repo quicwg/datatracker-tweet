@@ -7,7 +7,7 @@ on:
     - '.workflows/run.yml'
     - 'update.sh'
   schedule:
-    - cron: "15 */4 * * *"
+    - cron: "10 */4 * * *"
 
 jobs:
   build:
