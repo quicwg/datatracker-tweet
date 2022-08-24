@@ -39,13 +39,17 @@ class DatatrackerTracker:
     def run(self):
         last_seen_id = self.get_last_seen()
         self.note(f"Resuming at event: {last_seen_id}")
+        if self.args.markdown:
+            print(f"### Tweeting datatracker events since #{last_seen_id}")
         events = self.get_events(last_seen_id)
         new_last_seen = self.process_events(events, last_seen_id)
         self.note(f"Last event seen: {new_last_seen}")
         self.write_last_seen(new_last_seen)
 
     def process_events(self, events, last_seen_id):
+        num = 0
         for event in events:
+            last_seen_id = event["id"]
             if not f"draft-ietf-{self.args.wg}" in event["doc"]:
                 continue
             if self.args.debug:
@@ -60,12 +64,17 @@ class DatatrackerTracker:
             except ValueError:
                 break
             self.note(f"Message: {message}")
+            if self.args.markdown:
+                print(f"* {message}")
             if not self.args.dry_run:
                 try:
                     self.tweet(message)
                 except tweepy.TweepyException:
+                    last_seen_id = event["id"] - 1
                     break  # didn't tweet so we should bail
-            last_seen_id = event["id"]
+            num += 1
+        if self.args.markdown:
+            print(f"Found {num} events.")
         return last_seen_id
 
     def get_events(self, last_seen_id=None):
@@ -144,6 +153,13 @@ class DatatrackerTracker:
             help="don't tweet; just show messages on STDOUT",
         )
         parser.add_argument(
+            "-m",
+            "--markdown",
+            dest="markdown",
+            action="store_true",
+            help="output status in markdown format",
+        )
+        parser.add_argument(
             "--debug",
             dest="debug",
             action="store_true",
@@ -209,9 +225,14 @@ class DatatrackerTracker:
 
     def warn(self, message):
         sys.stderr.write(f"WARNING: {message}\n")
+        if self.args.markdown:
+            print(f"\n`Warning` {message}\n")
 
     def error(self, message):
         sys.stderr.write(f"ERROR: {message}\n")
+        if self.args.markdown:
+            print("## Error")
+            print(f"{message}")
         sys.exit(1)
 
 
